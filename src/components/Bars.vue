@@ -5,6 +5,7 @@
       height="3600"
       :options="chartOptions"
       :series="chartSeries"
+      @dataPointSelection="dataPointSelectionHandler"
       ref="chart"
       ></apexchart>
   </v-container>
@@ -17,6 +18,7 @@ import VueApexCharts from 'vue-apexcharts'
 export default {
   name: 'Bars',
   data: () => ({
+    chartData: [],
     chartOptions: {
       plotOptions: {
         bar: {
@@ -33,14 +35,7 @@ export default {
       },
       xaxis: {
         categories: [],
-      },
-      //tooltip: {
-      //  custom: function() {
-      //    return (
-      //      '<div>aaa</div>'
-      //    )
-      //  }
-      //}
+      }
     },
     chartSeries: [
       {
@@ -48,16 +43,32 @@ export default {
       }
     ]
   }),
+  methods: {
+      dataPointSelectionHandler: function (event, chartContext, config) {
+        const fundamentals = ['USDT', 'USD', 'BTC', 'ETH', 'BNB']
+        
+        let arr = this.chartData.data[config.dataPointIndex].pair.b
+
+        for (var f of fundamentals) {
+          var check = arr.find(value => value.match(new RegExp(f)))
+          if (check !== undefined) {
+            window.open('https://www.binance.com/ja/trade/' + check, '_blank')
+          }
+        }
+      }
+  },
   mounted () {
     let url = 'https://lbupa7i8jf.execute-api.us-west-2.amazonaws.com/list/GetBinanceProfitSupremeMeterSystem'
     axios.get(url).then(ret => {
-      const fundamentals = ['BTC', 'ETH', 'USD', 'USDT']
+      const fundamentals = ['BTC', 'ETH', 'USD', 'USDT', 'BNB']
       
       let last_modified = ret.data.last_modified
       let symbols = ret.data.data.map(x => x.symbol)
       let values = ret.data.data.map(x => x.val)
       let cols = ret.data.data.map(x => fundamentals.includes(x.symbol) ? '#AA0000' : '#000066')
 
+      this.chartData = ret.data
+      
       let component = this.$refs.chart
       component.updateOptions( {
         title: {

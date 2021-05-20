@@ -12,11 +12,11 @@
 </template>
 
 <script>
-import axios from 'axios'
 import VueApexCharts from 'vue-apexcharts'
 
 export default {
   name: 'Bars',
+  props: ['title', 'values', 'pairs', 'symbols'],
   data: () => ({
     chartData: [],
     chartOptions: {
@@ -30,58 +30,28 @@ export default {
         text: 'Coin',
         align: 'center',
       },
-      dataLabels: {
-        enabled: false
-      },
-      xaxis: {
-        categories: [],
-      }
+      dataLabels: { enabled: false },
+      xaxis: { categories: []}
     },
-    chartSeries: [
-      {
-        data: []
-      }
-    ]
+    chartSeries: [{data: []}]
   }),
-  methods: {
-      dataPointSelectionHandler: function (event, chartContext, config) {
-        const fundamentals = ['USDT', 'USD', 'BTC', 'ETH', 'BNB']
-        
-        let arr = this.chartData.data[config.dataPointIndex].pair.b
-
-        for (var f of fundamentals) {
-          var check = arr.find(value => value.match(new RegExp(f)))
-          if (check !== undefined) {
-            window.open('https://www.binance.com/ja/trade/' + check, '_blank')
-          }
-        }
-      }
+  watch: {
+    values: function(){
+      this.updateChart()
+    }
   },
-  mounted () {
-    let url = 'https://lbupa7i8jf.execute-api.us-west-2.amazonaws.com/list/GetBinanceProfitSupremeMeterSystem'
-    axios.get(url).then(ret => {
+  methods: {
+    updateChart: function () {
       const fundamentals = ['BTC', 'ETH', 'USD', 'USDT', 'BNB']
-      
-      let last_modified = ret.data.last_modified
-      let symbols = ret.data.data.map(x => x.symbol)
-      let values = ret.data.data.map(x => x.val)
-      let cols = ret.data.data.map(x => fundamentals.includes(x.symbol) ? '#AA0000' : '#000066')
-
-      this.chartData = ret.data
+      let cols = this.symbols.map(x => fundamentals.includes(x) ? '#AA0000' : '#000066')
       
       let component = this.$refs.chart
       component.updateOptions( {
         title: {
-          text: 'Last update: ' + last_modified,
-          align: 'center',
+          text: 'Last update: ' + this.title,
         },
         xaxis: {
-          categories: symbols,
-          labels: {
-            style: {
-              colors:['#000000']
-            }
-          }
+          categories: this.symbols,
         },
         yaxis: {
           labels: {
@@ -106,12 +76,18 @@ export default {
           return '#000000'
         }] 
       });
-      component.updateSeries([
-        {
-          data: values
+      component.updateSeries([{data: this.values}])
+    },
+    dataPointSelectionHandler: function (event, chartContext, config) {
+      const fundamentals = ['USDT', 'USD', 'BTC', 'ETH', 'BNB']
+      let arr = this.pairs[config.dataPointIndex].b
+      for (var f of fundamentals) {
+        var check = arr.find(value => value.match(new RegExp(f)))
+        if (check !== undefined) {
+          window.open('https://www.binance.com/ja/trade/' + check, '_blank')
         }
-      ])
-    })
+      }
+    }
   },
   components: {
     apexchart: VueApexCharts
